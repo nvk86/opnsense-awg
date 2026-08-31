@@ -1,0 +1,10 @@
+<menu>
+    <VPN>
+        <AmneziaWG cssClass="fa fa-shield fa-fw">
+            <General order="10" url="/ui/amneziawg/general"/>
+            <Server order="20" url="/ui/amneziawg/server"/>
+            <Clients order="30" url="/ui/amneziawg/clients"/>
+            <Diagnostics order="40" url="/ui/amneziawg/diagnostics"/>
+        </AmneziaWG>
+    </VPN>
+</menu>

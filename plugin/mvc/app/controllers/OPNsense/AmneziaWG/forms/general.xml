@@ -1,0 +1,14 @@
+<form>
+    <field>
+        <id>general.enabled</id>
+        <label>Enable AmneziaWG</label>
+        <type>checkbox</type>
+        <help>Enable the AmneziaWG VPN service</help>
+    </field>
+    <field>
+        <id>general.watchdog</id>
+        <label>Enable Watchdog</label>
+        <type>checkbox</type>
+        <help>Automatically restart tunnel if it goes down (checks every minute via cron)</help>
+    </field>
+</form>

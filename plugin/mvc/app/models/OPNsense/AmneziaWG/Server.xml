@@ -1,0 +1,33 @@
+<?xml version="1.0"?>
+<model>
+  <mount>//OPNsense/amneziawg/servers</mount>
+  <description>AmneziaWG Server Settings</description>
+  <version>1.0.0</version>
+  <items>
+    <server type="ArrayField">
+      <enabled type="BooleanField"><default>1</default><Required>N</Required></enabled>
+      <name type="TextField"><Required>Y</Required><mask>/^[a-zA-Z0-9_\-]{1,15}$/</mask><ValidationMessage>A unique server name is required (1-15 chars)</ValidationMessage></name>
+      <description type="TextField"><Required>N</Required></description>
+      <interface_number type="IntegerField"><Required>Y</Required><MinimumValue>0</MinimumValue><MaximumValue>99</MaximumValue></interface_number>
+      <private_key type="TextField"><Required>N</Required></private_key>
+      <address type="TextField"><Required>Y</Required><mask>/^(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\/\d{1,2}|[0-9a-fA-F:]+\/\d{1,3})(,(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\/\d{1,2}|[0-9a-fA-F:]+\/\d{1,3}))*$/</mask></address>
+      <listen_port type="IntegerField"><Required>Y</Required><MinimumValue>1</MinimumValue><MaximumValue>65535</MaximumValue></listen_port>
+      <clients_endpoint type="TextField"><Required>N</Required><mask>/^([^\s:]+:\d{1,5}|\[[0-9a-fA-F:]+\]:\d{1,5})$/</mask><ValidationMessage>Use host:port, IPv4:port, or [IPv6]:port</ValidationMessage></clients_endpoint>
+      <clients_keepalive type="IntegerField"><Required>N</Required><default>25</default><MinimumValue>0</MinimumValue><MaximumValue>65535</MaximumValue></clients_keepalive>
+      <clients_dns type="TextField"><Required>N</Required></clients_dns>
+      <mtu type="IntegerField"><Required>N</Required><MinimumValue>576</MinimumValue><MaximumValue>9000</MaximumValue></mtu>
+      <jc type="IntegerField"><Required>N</Required><MinimumValue>1</MinimumValue><MaximumValue>128</MaximumValue></jc>
+      <jmin type="IntegerField"><Required>N</Required><MinimumValue>1</MinimumValue><MaximumValue>1280</MaximumValue></jmin>
+      <jmax type="IntegerField"><Required>N</Required><MinimumValue>1</MinimumValue><MaximumValue>1280</MaximumValue></jmax>
+      <s1 type="IntegerField"><Required>N</Required><MinimumValue>0</MinimumValue><MaximumValue>1280</MaximumValue></s1>
+      <s2 type="IntegerField"><Required>N</Required><MinimumValue>0</MinimumValue><MaximumValue>1280</MaximumValue></s2>
+      <s3 type="IntegerField"><Required>N</Required><MinimumValue>0</MinimumValue><MaximumValue>1280</MaximumValue></s3>
+      <s4 type="IntegerField"><Required>N</Required><MinimumValue>0</MinimumValue><MaximumValue>1280</MaximumValue></s4>
+      <h1 type="TextField"><Required>N</Required><mask>/^\d{1,10}(-\d{1,10})?$/</mask></h1>
+      <h2 type="TextField"><Required>N</Required><mask>/^\d{1,10}(-\d{1,10})?$/</mask></h2>
+      <h3 type="TextField"><Required>N</Required><mask>/^\d{1,10}(-\d{1,10})?$/</mask></h3>
+      <h4 type="TextField"><Required>N</Required><mask>/^\d{1,10}(-\d{1,10})?$/</mask></h4>
+      <i1 type="TextField"><Required>N</Required></i1><i2 type="TextField"><Required>N</Required></i2><i3 type="TextField"><Required>N</Required></i3><i4 type="TextField"><Required>N</Required></i4><i5 type="TextField"><Required>N</Required></i5>
+    </server>
+  </items>
+</model>
