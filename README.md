@@ -79,13 +79,11 @@ A userspace-only `amnezia-tools` update intentionally leaves live tunnels runnin
 
 | Component | Supported / expected |
 |---|---|
-| OPNsense | 27.x |
-| FreeBSD | 15.x amd64 (OPNsense 27.x base) |
+| OPNsense | 26.x |
+| FreeBSD | 15.x amd64 (OPNsense 26.7.x base) |
 | `amnezia-kmod` | 2.0.x recommended for full AWG 2.0 support |
 | `amnezia-tools` | 1.0.20250903 or newer recommended |
-| Browser | Current Chromium/Firefox-compatible browser |
 
-For VM networking, shell and tunnel prerequisites, read [PREREQUISITES.md](PREREQUISITES.md) before installation.
 
 ## Installation
 
