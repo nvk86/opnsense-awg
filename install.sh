@@ -1,6 +1,6 @@
 #!/bin/sh
 # AmneziaWG OPNsense Plugin Installer
-# Obfuscated WireGuard (bypass DPI) for OPNsense 27.x / FreeBSD 15.x
+# Obfuscated WireGuard (bypass DPI) for OPNsense 26.7.x / FreeBSD 15.1
 #
 # Usage:
 #   sh install.sh            — install
@@ -1481,7 +1481,7 @@ if [ -x /usr/local/bin/php ]; then
             $cfg = OPNsense\Core\Config::getInstance()->object();
             // New multi-instance path
             $new = isset($cfg->OPNsense->amneziawg->instances->instance) ? "1" : "0";
-            // Server instances (4.0.0+)
+            // Server instances
             $servers = isset($cfg->OPNsense->amneziawg->servers->server) ? "1" : "0";
             // Legacy flat node (pre-3.0.0) — migrated automatically by M2_0_0
             $legacy = (string)($cfg->OPNsense->amneziawg->instance->peer_public_key ?? "");
@@ -1519,7 +1519,7 @@ echo ""
 echo "==> Normalizing canonical AmneziaWG configs..."
 install -d -m 0700 /usr/local/etc/amnezia
 
-# 4.0.1 briefly used /usr/local/etc/amnezia/runtime/ as its canonical
+# An earlier development build briefly used /usr/local/etc/amnezia/runtime/ as its canonical
 # location. The plugin standardizes on /usr/local/etc/amnezia/awgN.conf.
 # If upgrading from that build, copy only interfaces present in the OPNsense
 # model back to the canonical namespace before removing the obsolete directory.
@@ -1555,7 +1555,7 @@ echo implode(" ", array_keys($out));
     done
     unset _IFACE _OLD _NEW _MANAGED_IFACES
     rm -rf /usr/local/etc/amnezia/runtime
-    echo "[OK]  Obsolete 4.0.1 runtime directory removed"
+    echo "[OK]  Obsolete runtime directory removed"
 fi
 
 echo ""

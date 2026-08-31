@@ -34,7 +34,7 @@
         // watchdog won't bring the tunnel back (service Start/Restart/Apply
         // resets per-row stops).
         function tunnelRowAction(event, cell, action, legacyThis) {
-            // OPNsense 27.x UIBootgrid/Tabulator invokes custom commands as
+            // OPNsense UIBootgrid/Tabulator invokes custom commands as
             // method(event, cell). Keep a legacy fallback for older UIBootgrid.
             var uuid = '';
             if (cell && typeof cell.getData === 'function') {

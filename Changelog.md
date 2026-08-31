@@ -21,4 +21,4 @@ All notable public releases of `opnsense-awg` are documented here.
 - Hardened installer with repository-state verification, isolated command-scoped FreeBSD quarterly repository access, package-lock preservation and guarded `amnezia-tools` / `amnezia-kmod` update paths.
 - Local rollback packages for AWG package replacement and capture/restore of the exact live managed interface set during kernel-module transactions.
 - Safe uninstall flow with independent choices for AWG package removal and configuration/private-key purge.
-- OPNsense 27.x / FreeBSD 15.x as the primary target platform.
+- OPNsense 26.7.x / FreeBSD 15.1 as the primary target platform.
