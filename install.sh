@@ -1464,7 +1464,7 @@ verify_pkg_repo_state
 
 # ─────────────────────────────────────────────────────────────────────────────
 # DETECT EXISTING CONFIG (MED-8)
-# Multi-instance (3.0.0): checks both the new collection path and the legacy
+# Multi-instance compatibility: checks both the new collection path and the legacy
 # flat node. A legacy node is migrated by the model migration (M2_0_0),
 # executed in Step 4 via run_migrations.php — no manual import needed.
 # ─────────────────────────────────────────────────────────────────────────────
@@ -1483,7 +1483,7 @@ if [ -x /usr/local/bin/php ]; then
             $new = isset($cfg->OPNsense->amneziawg->instances->instance) ? "1" : "0";
             // Server instances
             $servers = isset($cfg->OPNsense->amneziawg->servers->server) ? "1" : "0";
-            // Legacy flat node (pre-3.0.0) — migrated automatically by M2_0_0
+            // Legacy flat node — migrated automatically by M2_0_0
             $legacy = (string)($cfg->OPNsense->amneziawg->instance->peer_public_key ?? "");
             echo ($new === "1" || $servers === "1" || $legacy !== "") ? "1" : "0";
         } catch (Exception $e) {
@@ -1494,7 +1494,7 @@ fi
 
 if [ "$CONFIG_XML_HAS_AWG" = "1" ]; then
     echo "[OK]  Existing configuration found in config.xml — will not overwrite."
-    echo "      A pre-3.0.0 single-tunnel config is migrated automatically in Step 4."
+    echo "      A legacy single-tunnel config is migrated automatically in Step 4."
 else
     # Stray .conf files are reported only — import via GUI 'Import .conf' dialog
     for _f in /usr/local/etc/amnezia/awg*.conf; do
@@ -1594,7 +1594,7 @@ install -m 0644 "$PLUGIN_DIR/mvc/app/models/OPNsense/AmneziaWG/Peer.php" \
 install -m 0644 "$PLUGIN_DIR/mvc/app/models/OPNsense/AmneziaWG/Menu/Menu.xml" \
                 /usr/local/opnsense/mvc/app/models/OPNsense/AmneziaWG/Menu/
 
-# Multi-instance (3.0.0): model migration from the legacy flat layout
+# Model migration from the legacy flat layout
 install -d /usr/local/opnsense/mvc/app/models/OPNsense/AmneziaWG/Migrations
 install -m 0644 "$PLUGIN_DIR/mvc/app/models/OPNsense/AmneziaWG/Migrations/M2_0_0.php" \
                 /usr/local/opnsense/mvc/app/models/OPNsense/AmneziaWG/Migrations/
@@ -1634,7 +1634,7 @@ install -m 0644 "$PLUGIN_DIR/mvc/app/controllers/OPNsense/AmneziaWG/forms/dialog
                 /usr/local/opnsense/mvc/app/controllers/OPNsense/AmneziaWG/forms/
 install -m 0644 "$PLUGIN_DIR/mvc/app/controllers/OPNsense/AmneziaWG/forms/dialogPeer.xml" \
                 /usr/local/opnsense/mvc/app/controllers/OPNsense/AmneziaWG/forms/
-# Remove the pre-3.0.0 single-instance form if present
+# Remove the legacy single-instance form if present
 rm -f /usr/local/opnsense/mvc/app/controllers/OPNsense/AmneziaWG/forms/instance.xml
 
 install -d /usr/local/opnsense/mvc/app/views/OPNsense/AmneziaWG
@@ -1709,7 +1709,7 @@ fi
 
 echo ""
 echo "==> Step 4: Running model migrations..."
-# Multi-instance (3.0.0): migrate a pre-3.0.0 flat single-instance config to
+# Migrate a legacy flat single-instance config to
 # the ArrayField collection (M2_0_0). Safe to run repeatedly (idempotent).
 if [ -x /usr/local/bin/php ]; then
     _MIG_OUT="$(mktemp /tmp/amneziawg-migrations.XXXXXX)"
