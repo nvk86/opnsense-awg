@@ -17,7 +17,6 @@ class InstanceController extends ApiMutableModelControllerBase
     const PRIVKEY_SENTINEL = '::file::';
 
     // Handshake older than this is reported as 'no_handshake' (matches
-    // the staleness threshold in amneziawg-testconnect.php)
     const HANDSHAKE_FRESH_SEC = 180;
 
     /**
@@ -113,6 +112,8 @@ class InstanceController extends ApiMutableModelControllerBase
 
         $validations = array_merge(
             $this->validateHFields($body, 'instance'),
+            $this->validateAwg31Ranges($body, 'instance'),
+            $this->validateKeepaliveRange($body['peer_persistent_keepalive'] ?? '', 'instance.peer_persistent_keepalive'),
             $this->validateInterfaceNumber($body, null),
             $this->validateListenPort($body, null)
         );
@@ -158,6 +159,8 @@ class InstanceController extends ApiMutableModelControllerBase
 
         $validations = array_merge(
             $this->validateHFields($body, 'instance'),
+            $this->validateAwg31Ranges($body, 'instance'),
+            $this->validateKeepaliveRange($body['peer_persistent_keepalive'] ?? '', 'instance.peer_persistent_keepalive'),
             $this->validateInterfaceNumber($body, (string)$uuid),
             $this->validateListenPort($body, (string)$uuid)
         );
@@ -314,8 +317,8 @@ class InstanceController extends ApiMutableModelControllerBase
             $parts = explode('-', $val, 2);
             $low  = (float)$parts[0];
             $high = isset($parts[1]) ? (float)$parts[1] : $low;
-            if ($low < 5 || $high < 5 || $low > 4294967295 || $high > 4294967295) {
-                $validationErrors["{$prefix}.{$hf}"] = strtoupper($hf) . ' values must be in range 5-4294967295 (values 1-4 are reserved)';
+            if ($low < 1 || $high < 1 || $low > 4294967295 || $high > 4294967295) {
+                $validationErrors["{$prefix}.{$hf}"] = strtoupper($hf) . ' values must be in range 1-4294967295';
             } elseif ($high < $low) {
                 $validationErrors["{$prefix}.{$hf}"] = strtoupper($hf) . ' range start must not exceed range end';
             } else {
@@ -331,6 +334,37 @@ class InstanceController extends ApiMutableModelControllerBase
             }
         }
         return $validationErrors;
+    }
+
+    private function validateAwg31Ranges(array $body, string $prefix): array
+    {
+        $errors = [];
+        foreach (['content_padding_addition','rekey_after_time','rekey_timeout','reject_after_time','keepalive_timeout','max_handshake_attempts'] as $field) {
+            $value = trim((string)($body[$field] ?? ''));
+            if ($value === '') continue;
+            $err = $this->validateUnsignedRangeValue($value, 4294967295);
+            if ($err !== '') $errors[$prefix . '.' . $field] = $err;
+        }
+        return $errors;
+    }
+
+    private function validateKeepaliveRange($value, string $field): array
+    {
+        $value = trim((string)$value);
+        if ($value === '') return [];
+        $err = $this->validateUnsignedRangeValue($value, 65535);
+        return $err === '' ? [] : [$field => $err];
+    }
+
+    private function validateUnsignedRangeValue(string $value, int $max): string
+    {
+        if (!preg_match('/^\d{1,10}(-\d{1,10})?$/', $value)) return 'Must be a non-negative number or range';
+        $parts = explode('-', $value, 2);
+        $lo = (float)$parts[0];
+        $hi = isset($parts[1]) ? (float)$parts[1] : $lo;
+        if ($lo > $max || $hi > $max) return 'Value exceeds ' . $max;
+        if ($hi < $lo) return 'Range start must not exceed range end';
+        return '';
     }
 
     /**

@@ -1,5 +1,20 @@
 # Changelog
 
+## v2.0.0 — 2026-09-04
+
+- Corrected installer postflight handling for deliberately stopped backends and added explicit verification of restored interfaces.
+- AWG 3.1 on/off settings (`RandomTrailers`, `DisableCookies`) use native GUI checkboxes only; users cannot enter arbitrary boolean strings.
+
+- Migrated the plugin backend to project-owned AmneziaWG 3.1 packages `opnsense-awg-kmod` and `opnsense-awg-tools`, while retaining compatibility with existing AWG 2.x configurations.
+- Installer now performs guarded AWG2 → AWG3 package/module migration using the latest compatible 3.x releases, SHA256 verification, package-manifest validation, configuration/key preservation and rollback packages.
+- Kernel module namespace changed from `if_amn` to `if_awg`; boot autoload and watchdog/service checks were updated accordingly.
+- Added HeaderProtectionKey, ContentPaddingAddition, ranged timing controls, RandomTrailers and DisableCookies to client and server models/forms/config generation.
+- Added ranged PersistentKeepalive support for client peers, server peers and generated client configurations.
+- Server provisioning/QR export propagates AWG 3.1 interface parameters to generated clients.
+- Import parser understands AWG 3.1 fields and serializes booleans using the supported `on`/`off` form.
+- Removed the Test Connection button, API action, configd action and helper script. Diagnostics and configuration validation remain available.
+- Existing v1.0.0 configuration and protected key files remain compatible.
+
 All notable public releases of `opnsense-awg` are documented here.
 
 ## v1.0.0 — 2026-08-31

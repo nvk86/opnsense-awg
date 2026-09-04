@@ -200,26 +200,6 @@ class ServiceController extends ApiMutableServiceControllerBase
         return preg_match('/^awg\d{1,2}$/', $iface) ? $iface : '';
     }
 
-    private function configuredInterfaceMode(string $iface): string
-    {
-        if ($iface === '') {
-            return '';
-        }
-        foreach ([
-            [new \OPNsense\AmneziaWG\Instance(), 'instance', 'client'],
-            [new \OPNsense\AmneziaWG\Server(), 'server', 'server'],
-        ] as [$model, $path, $mode]) {
-            foreach ($model->{$path}->iterateItems() as $node) {
-                $number = trim((string)$node->interface_number);
-                $candidate = 'awg' . ($number === '' ? '0' : (string)(int)$number);
-                if ($candidate === $iface) {
-                    return $mode;
-                }
-            }
-        }
-        return '';
-    }
-
     /**
      * GET /api/amneziawg/service/diagnostics[?interface=awgN]
      * Returns interface stats as JSON. Without a parameter the first
@@ -240,35 +220,6 @@ class ServiceController extends ApiMutableServiceControllerBase
         return $data;
     }
 
-    /**
-     * POST /api/amneziawg/service/testconnect [interface=awgN]
-     * Tests connectivity through the tunnel
-     */
-    public function testconnectAction()
-    {
-        if (!$this->request->isPost()) {
-            return ['result' => 'failed', 'message' => 'POST required'];
-        }
-        $iface = $this->requestedInterface();
-        if ($iface !== '' && $this->configuredInterfaceMode($iface) === 'server') {
-            return [
-                'status' => 'error',
-                'error_code' => 'not_applicable',
-                'message' => 'Connectivity test is only applicable to client tunnels',
-                'hint' => 'For a server, use Diagnostics to inspect listening state and peer handshakes.',
-            ];
-        }
-        $backend = new Backend();
-        $output  = trim((string)$backend->configdRun(trim('amneziawg testconnect ' . $iface)));
-        if (empty($output)) {
-            return ['status' => 'error', 'message' => 'No response from configd'];
-        }
-        $data = json_decode($output, true);
-        if (json_last_error() !== JSON_ERROR_NONE) {
-            return ['status' => 'error', 'message' => $output];
-        }
-        return $data;
-    }
 
     /**
      * POST /api/amneziawg/service/log

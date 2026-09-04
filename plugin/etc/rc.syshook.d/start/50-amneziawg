@@ -24,10 +24,10 @@ echo "enabled=[$ENABLED]"
 [ -f "$SERVICE_CONTROL" ] || { echo "service-control not found"; exit 0; }
 
 # Verify kernel module before starting tunnel (prevents boot hang on kmod mismatch)
-if ! kldstat -q -m if_amn 2>/dev/null; then
-    echo "if_amn module not loaded, attempting kldload..."
-    if ! kldload if_amn 2>&1; then
-        echo "FATAL: cannot load if_amn — skipping tunnel start (kernel/module version mismatch?)"
+if ! kldstat -q -m if_awg 2>/dev/null; then
+    echo "if_awg module not loaded, attempting kldload..."
+    if ! kldload if_awg 2>&1; then
+        echo "FATAL: cannot load if_awg — skipping tunnel start (kernel/module version mismatch?)"
         exit 0
     fi
 fi

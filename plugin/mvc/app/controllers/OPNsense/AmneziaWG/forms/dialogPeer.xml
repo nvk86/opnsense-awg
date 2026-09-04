@@ -9,6 +9,6 @@
  <field><id>peer.latest_handshake</id><label>Latest Handshake</label><type>ignore</type><grid_view><formatter>peerhandshake</formatter><sortable>false</sortable><width>130</width></grid_view></field>
  <field><id>peer.public_key</id><label>Client Public Key</label><type>text</type><grid_view><ignore>true</ignore></grid_view></field>
  <field><id>peer.preshared_key</id><label>Pre-Shared Key</label><type>text</type><grid_view><ignore>true</ignore></grid_view></field>
- <field><id>peer.persistent_keepalive</id><label>Keepalive</label><type>text</type><help>Usually blank/0 on server side; set only when needed.</help><grid_view><ignore>true</ignore></grid_view></field>
+ <field><id>peer.persistent_keepalive</id><label>Persistent Keepalive</label><type>text</type><help>Optional per-peer PersistentKeepalive. Accepts 0-65535 or an AWG 3.1 range such as 20-30. Usually blank on a server unless periodic traffic to this peer is explicitly required.</help><grid_view><ignore>true</ignore></grid_view></field>
  <field><id>peer.description</id><label>Description</label><type>text</type></field>
 </form>

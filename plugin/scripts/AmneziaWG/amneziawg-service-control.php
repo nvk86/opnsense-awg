@@ -21,18 +21,18 @@ function awg_check_binaries(): bool
     return true;
 }
 
-// Check that if_amn kernel module is loaded; attempt kldload if not
+// Check that if_awg kernel module is loaded; attempt kldload if not
 function awg_check_kmod(): bool
 {
-    exec('/sbin/kldstat -q -m if_amn 2>/dev/null', $out, $rc);
+    exec('/sbin/kldstat -q -m if_awg 2>/dev/null', $out, $rc);
     if ($rc !== 0) {
-        awg_log('WARNING: if_amn kernel module not loaded, attempting kldload...');
-        exec('/sbin/kldload if_amn 2>&1', $loadOut, $loadRc);
+        awg_log('WARNING: if_awg kernel module not loaded, attempting kldload...');
+        exec('/sbin/kldload if_awg 2>&1', $loadOut, $loadRc);
         if ($loadRc !== 0) {
-            awg_log('ERROR: failed to load if_amn kernel module: ' . implode(' ', $loadOut));
+            awg_log('ERROR: failed to load if_awg kernel module: ' . implode(' ', $loadOut));
             return false;
         }
-        awg_log('if_amn kernel module loaded successfully');
+        awg_log('if_awg kernel module loaded successfully');
     }
     return true;
 }
@@ -115,6 +115,15 @@ function awg_get_instances(): array
             'h2'                        => (string)($inst->h2                        ?? ''),
             'h3'                        => (string)($inst->h3                        ?? ''),
             'h4'                        => (string)($inst->h4                        ?? ''),
+            'header_protection_key'     => (string)($inst->header_protection_key     ?? ''),
+            'content_padding_addition'  => (string)($inst->content_padding_addition  ?? ''),
+            'rekey_after_time'          => (string)($inst->rekey_after_time          ?? ''),
+            'rekey_timeout'             => (string)($inst->rekey_timeout             ?? ''),
+            'reject_after_time'         => (string)($inst->reject_after_time         ?? ''),
+            'keepalive_timeout'         => (string)($inst->keepalive_timeout         ?? ''),
+            'max_handshake_attempts'    => (string)($inst->max_handshake_attempts    ?? ''),
+            'random_trailers'           => (string)($inst->random_trailers           ?? ''),
+            'disable_cookies'           => (string)($inst->disable_cookies           ?? ''),
             // I1-I5 CPS tags contain angle brackets — double-decode HTML entities from config.xml
             'i1'                        => html_entity_decode(html_entity_decode((string)($inst->i1 ?? ''), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'),
             'i2'                        => html_entity_decode(html_entity_decode((string)($inst->i2 ?? ''), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'),
@@ -175,6 +184,15 @@ function awg_get_instances(): array
                 'jc' => (string)($srv->jc ?? ''), 'jmin' => (string)($srv->jmin ?? ''), 'jmax' => (string)($srv->jmax ?? ''),
                 's1' => (string)($srv->s1 ?? ''), 's2' => (string)($srv->s2 ?? ''), 's3' => (string)($srv->s3 ?? ''), 's4' => (string)($srv->s4 ?? ''),
                 'h1' => (string)($srv->h1 ?? ''), 'h2' => (string)($srv->h2 ?? ''), 'h3' => (string)($srv->h3 ?? ''), 'h4' => (string)($srv->h4 ?? ''),
+                'header_protection_key' => (string)($srv->header_protection_key ?? ''),
+                'content_padding_addition' => (string)($srv->content_padding_addition ?? ''),
+                'rekey_after_time' => (string)($srv->rekey_after_time ?? ''),
+                'rekey_timeout' => (string)($srv->rekey_timeout ?? ''),
+                'reject_after_time' => (string)($srv->reject_after_time ?? ''),
+                'keepalive_timeout' => (string)($srv->keepalive_timeout ?? ''),
+                'max_handshake_attempts' => (string)($srv->max_handshake_attempts ?? ''),
+                'random_trailers' => (string)($srv->random_trailers ?? ''),
+                'disable_cookies' => (string)($srv->disable_cookies ?? ''),
                 'i1' => html_entity_decode(html_entity_decode((string)($srv->i1 ?? ''), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'),
                 'i2' => html_entity_decode(html_entity_decode((string)($srv->i2 ?? ''), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'),
                 'i3' => html_entity_decode(html_entity_decode((string)($srv->i3 ?? ''), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'),
@@ -242,8 +260,13 @@ function awg_write_conf(array $inst, ?string $pathOverride = null): string
     // Obfuscation parameters
     $obf = ['jc'=>'Jc','jmin'=>'Jmin','jmax'=>'Jmax','s1'=>'S1','s2'=>'S2','s3'=>'S3','s4'=>'S4',
             'h1'=>'H1','h2'=>'H2','h3'=>'H3','h4'=>'H4',
+            'header_protection_key'=>'HeaderProtectionKey',
+            'content_padding_addition'=>'ContentPaddingAddition',
+            'rekey_after_time'=>'RekeyAfterTime','rekey_timeout'=>'RekeyTimeout',
+            'reject_after_time'=>'RejectAfterTime','keepalive_timeout'=>'KeepaliveTimeout',
+            'max_handshake_attempts'=>'MaxHandshakeAttempts',
             'i1'=>'I1','i2'=>'I2','i3'=>'I3','i4'=>'I4','i5'=>'I5'];
-    // Validate H1-H4: must be >= 5 and ranges must not overlap
+    // Validate H1-H4: non-zero uint32 values/ranges; ranges must not overlap
     // Supports single values (e.g. "12345") and ranges (e.g. "12345-67890")
     $hRanges = [];
     foreach (['h1','h2','h3','h4'] as $hk) {
@@ -259,8 +282,8 @@ function awg_write_conf(array $inst, ?string $pathOverride = null): string
         $parts = explode('-', $raw, 2);
         $low  = (float)$parts[0];
         $high = isset($parts[1]) ? (float)$parts[1] : $low;
-        if ($low < 5 || $high < 5 || $low > 4294967295 || $high > 4294967295 || $high < $low) {
-            awg_log("WARNING: {$hk}={$raw} is invalid (values must be 5-4294967295, start <= end). Skipping {$hk}.");
+        if ($low < 1 || $high < 1 || $low > 4294967295 || $high > 4294967295 || $high < $low) {
+            awg_log("WARNING: {$hk}={$raw} is invalid (values must be 1-4294967295, start <= end). Skipping {$hk}.");
             $inst[$hk] = '';
             continue;
         }
@@ -279,8 +302,13 @@ function awg_write_conf(array $inst, ?string $pathOverride = null): string
         }
     }
     foreach ($obf as $k => $label) {
-        if (!empty($inst[$k])) {
-            $lines[] = "$label = " . awg_sanitize($inst[$k]);
+        if (array_key_exists($k, $inst) && (string)$inst[$k] !== '') {
+            $lines[] = "$label = " . awg_sanitize((string)$inst[$k]);
+        }
+    }
+    foreach (['random_trailers' => 'RandomTrailers', 'disable_cookies' => 'DisableCookies'] as $k => $label) {
+        if (array_key_exists($k, $inst) && $inst[$k] !== '') {
+            $lines[] = $label . ' = ' . ((string)$inst[$k] === '1' || strtolower((string)$inst[$k]) === 'on' ? 'on' : 'off');
         }
     }
 
@@ -1176,11 +1204,11 @@ switch ($action) {
             break;
         }
         if (!awg_check_binaries()) {
-            echo "ERROR: awg/awg-quick binaries not found. Install amnezia-tools package.\n";
+            echo "ERROR: awg/awg-quick binaries not found. Install opnsense-awg-tools package.\n";
             break;
         }
         if (!awg_check_kmod()) {
-            echo "ERROR: if_amn kernel module not available. Install/reinstall amnezia-kmod.\n";
+            echo "ERROR: if_awg kernel module not available. Install/reinstall opnsense-awg-kmod.\n";
             break;
         }
         // Remove stopped flags so watchdog can monitor
@@ -1215,11 +1243,11 @@ switch ($action) {
             break;
         }
         if (!awg_check_binaries()) {
-            echo "ERROR: awg/awg-quick binaries not found. Install amnezia-tools package.\n";
+            echo "ERROR: awg/awg-quick binaries not found. Install opnsense-awg-tools package.\n";
             break;
         }
         if (!awg_check_kmod()) {
-            echo "ERROR: if_amn kernel module not available. Install/reinstall amnezia-kmod.\n";
+            echo "ERROR: if_awg kernel module not available. Install/reinstall opnsense-awg-kmod.\n";
             break;
         }
         // Remove stopped flags so watchdog can monitor
@@ -1255,11 +1283,11 @@ switch ($action) {
             break;
         }
         if (!awg_check_binaries()) {
-            echo "ERROR: awg/awg-quick binaries not found. Install amnezia-tools package.\n";
+            echo "ERROR: awg/awg-quick binaries not found. Install opnsense-awg-tools package.\n";
             break;
         }
         if (!awg_check_kmod()) {
-            echo "ERROR: if_amn kernel module not available. Install/reinstall amnezia-kmod.\n";
+            echo "ERROR: if_awg kernel module not available. Install/reinstall opnsense-awg-kmod.\n";
             break;
         }
         // Apply = make live state match config: clear manual-stop state too,
@@ -1446,7 +1474,7 @@ switch ($action) {
         $privkeyRaw = shell_exec(AWG_BIN . ' genkey 2>/dev/null');
         if ($privkeyRaw === null || trim($privkeyRaw) === '') {
             awg_log('ERROR: awg genkey returned empty result');
-            echo json_encode(['status' => 'error', 'message' => 'Failed to generate private key — is amnezia-tools installed?']) . "\n";
+            echo json_encode(['status' => 'error', 'message' => 'Failed to generate private key — is opnsense-awg-tools installed?']) . "\n";
             break;
         }
         $privkey = trim($privkeyRaw);
@@ -1476,7 +1504,7 @@ switch ($action) {
             break;
         }
         if (!awg_check_kmod()) {
-            echo "ERROR: if_amn kernel module not available. Install/reinstall amnezia-kmod.\n";
+            echo "ERROR: if_awg kernel module not available. Install/reinstall opnsense-awg-kmod.\n";
             break;
         }
         $instances = awg_get_instances();

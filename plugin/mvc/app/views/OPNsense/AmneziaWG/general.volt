@@ -250,11 +250,6 @@
             $peerTools.append($genClient, $qrClient, $downloadClient).insertAfter($clientPrivate);
 
             var $peerPsk = $peerDialog.find('input[id="peer.preshared_key"]');
-            var $legacyKeepalive = $peerDialog.find('[id="peer.persistent_keepalive"]');
-            if ($legacyKeepalive.length) {
-                $legacyKeepalive.closest('tr').hide();
-                $legacyKeepalive.closest('.form-group').hide();
-            }
 
             $peerDialog.on('show.bs.modal', function () { $clientPrivate.val(''); });
 
@@ -398,6 +393,18 @@
                 });
         }
 
+
+        var $serverHpk = $('#{{formGridServer['edit_dialog_id']}} input[id="server.header_protection_key"]');
+        if ($serverHpk.length) {
+            $('<button type="button" class="btn btn-xs btn-default" style="margin-top:4px;"><i class="fa fa-random"></i> {{ lang._('Generate HP Key') }}</button>')
+                .insertAfter($serverHpk).click(function () {
+                    ajaxGet('/api/amneziawg/server/gen_key_pair', {}, function (data) {
+                        if (data.status === 'ok') $serverHpk.val(data.private_key);
+                        else alert(data.message || '{{ lang._("Key generation failed") }}');
+                    });
+                });
+        }
+
         $('#{{formGridServer['edit_dialog_id']}}').on('shown.bs.modal', function () {
             var el = document.createElement('textarea');
             ['i1','i2','i3','i4','i5'].forEach(function (f) {
@@ -414,7 +421,12 @@
                 window._awgImportData = null;
                 Object.keys(data).forEach(function (f) {
                     if (data[f] !== undefined && data[f] !== '') {
-                        $('[id="instance.' + f + '"]').val(data[f]);
+                        var $field = $('[id="instance.' + f + '"]');
+                        if (f === 'random_trailers' || f === 'disable_cookies') {
+                            $field.prop('checked', String(data[f]) === '1');
+                        } else {
+                            $field.val(data[f]);
+                        }
                     }
                 });
             }
@@ -441,6 +453,18 @@
                         } else {
                             alert(data.message || "{{ lang._('Key generation failed') }}");
                         }
+                    });
+                });
+        }
+
+
+        var $clientHpk = $('#{{formGridInstance['edit_dialog_id']}} input[id="instance.header_protection_key"]');
+        if ($clientHpk.length) {
+            $('<button type="button" class="btn btn-xs btn-default" style="margin-top:4px;"><i class="fa fa-random"></i> {{ lang._('Generate HP Key') }}</button>')
+                .insertAfter($clientHpk).click(function () {
+                    ajaxGet('/api/amneziawg/instance/gen_key_pair', {}, function (data) {
+                        if (data.status === 'ok') $clientHpk.val(data.private_key);
+                        else alert(data.message || '{{ lang._("Key generation failed") }}');
                     });
                 });
         }
@@ -577,6 +601,9 @@
                 if (data.status === 'ok') {
                     var fields = ['private_key','address','dns','mtu',
                                   'jc','jmin','jmax','s1','s2','s3','s4','h1','h2','h3','h4',
+                                  'header_protection_key','content_padding_addition',
+                                  'rekey_after_time','rekey_timeout','reject_after_time','keepalive_timeout','max_handshake_attempts',
+                                  'random_trailers','disable_cookies',
                                   'i1','i2','i3','i4','i5',
                                   'peer_public_key','peer_preshared_key','peer_endpoint',
                                   'peer_allowed_ips','peer_persistent_keepalive'];
@@ -590,7 +617,12 @@
                     if ($('#{{formGridInstance['edit_dialog_id']}}').hasClass('in')) {
                         // Dialog already open — fill fields directly
                         Object.keys(parsed).forEach(function (f) {
-                            $('[id="instance.' + f + '"]').val(parsed[f]);
+                            var $field = $('[id="instance.' + f + '"]');
+                            if (f === 'random_trailers' || f === 'disable_cookies') {
+                                $field.prop('checked', String(parsed[f]) === '1');
+                            } else {
+                                $field.val(parsed[f]);
+                            }
                         });
                         decodeIFields();
                     } else {
@@ -608,23 +640,11 @@
         });
 
         // ── Diagnostics tab ──────────────────────────────────────────
-        // Multi-instance: tunnel selector feeds diagnostics + testconnect.
+        // Multi-instance: tunnel selector feeds diagnostics.
         function selectedDiagIface() {
             return $('#diagIface').val() || '';
         }
 
-        function selectedDiagMode() {
-            return $('#diagIface option:selected').data('mode') || '';
-        }
-
-        function updateDiagActions() {
-            var isServer = selectedDiagMode() === 'server';
-            $('#btnTestConnect')
-                .prop('disabled', isServer)
-                .attr('title', isServer
-                    ? "{{ lang._('Client connectivity test is not applicable to a server interface') }}"
-                    : "{{ lang._('Test connectivity through the selected client tunnel') }}");
-        }
 
         function loadDiagIfaceList() {
             var dfObj = new $.Deferred();
@@ -649,7 +669,6 @@
                         $sel.append($('<option>').val(iface).text(label).attr('data-mode', 'server'));
                     });
                     if (prev && $sel.find('option[value="' + prev + '"]').length) $sel.val(prev);
-                    updateDiagActions();
                     dfObj.resolve();
                 });
             });
@@ -657,7 +676,6 @@
         }
 
         $('#diagIface').change(function () {
-            updateDiagActions();
             loadDiagnostics();
         });
 
@@ -737,41 +755,6 @@
             loadDiagnostics();
         });
 
-        // ── Test connection ─────────────────────────────────────────
-        $('#btnTestConnect').click(function () {
-            var $btn = $(this);
-            $btn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> {{ lang._("Testing...") }}');
-            $('#testResult').hide();
-            $.ajax({
-                url: '/api/amneziawg/service/testconnect',
-                type: 'POST',
-                dataType: 'json',
-                data: selectedDiagIface() !== '' ? {interface: selectedDiagIface()} : {},
-                timeout: 20000,
-                success: function (data) {
-                    $btn.html('<i class="fa fa-bolt"></i> {{ lang._("Test Connection") }}');
-                    updateDiagActions();
-                    var ok = (data.status === 'ok');
-                    var html = '<strong>' + (ok ? '{{ lang._("Success") }}' : '{{ lang._("Failed") }}') + ':</strong> '
-                             + $('<div>').text(data.message || '').html();
-                    if (!ok && data.hint) {
-                        html += '<br><small><em><i class="fa fa-lightbulb-o"></i> '
-                              + $('<div>').text(data.hint).html() + '</em></small>';
-                    }
-                    $('#testResult')
-                        .removeClass('alert-success alert-danger')
-                        .addClass(ok ? 'alert-success' : 'alert-danger')
-                        .html(html)
-                        .show();
-                },
-                error: function () {
-                    $btn.html('<i class="fa fa-bolt"></i> {{ lang._("Test Connection") }}');
-                    updateDiagActions();
-                    $('#testResult').removeClass('alert-success').addClass('alert-danger')
-                        .html('<strong>{{ lang._("Error") }}:</strong> {{ lang._("Request failed") }}').show();
-                }
-            });
-        });
 
         // ── Log tab ─────────────────────────────────────────────────
         function loadLog() {
@@ -917,9 +900,6 @@
                 <button id="btnDiagRefresh" class="btn btn-sm btn-default">
                     <i class="fa fa-refresh"></i> {{ lang._('Refresh') }}
                 </button>
-                <button id="btnTestConnect" class="btn btn-sm btn-primary">
-                    <i class="fa fa-bolt"></i> {{ lang._('Test Connection') }}
-                </button>
                 <button id="btnValidate" class="btn btn-sm btn-default">
                     <i class="fa fa-check-circle"></i> {{ lang._('Validate Config') }}
                 </button>
@@ -927,8 +907,6 @@
                     <i class="fa fa-clipboard"></i> {{ lang._('Copy Debug Info') }}
                 </button>
             </div>
-
-            <div id="testResult" class="alert" style="display: none;"></div>
             <div id="diagError" class="alert alert-danger" style="display: none;"></div>
             <div id="diagLoading" style="display: none;">
                 <i class="fa fa-spinner fa-spin"></i> {{ lang._('Loading...') }}

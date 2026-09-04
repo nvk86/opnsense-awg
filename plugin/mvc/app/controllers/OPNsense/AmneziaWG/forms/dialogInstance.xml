@@ -143,7 +143,7 @@
         <id>instance.s3</id>
         <label>S3</label>
         <type>text</type>
-        <help>AWG 2.0: extra bytes added before cookie message (0-1280). From server config.</help>
+        <help>Extra bytes added before cookie message (0-1280). From server config.</help>
         <grid_view>
             <ignore>true</ignore>
         </grid_view>
@@ -152,7 +152,7 @@
         <id>instance.s4</id>
         <label>S4</label>
         <type>text</type>
-        <help>AWG 2.0: extra bytes added before transport data message (0-1280). From server config.</help>
+        <help>Extra bytes added before transport data message (0-1280). From server config.</help>
         <grid_view>
             <ignore>true</ignore>
         </grid_view>
@@ -161,7 +161,7 @@
         <id>instance.h1</id>
         <label>H1</label>
         <type>text</type>
-        <help>Header ID for init packets — number or range (e.g. 12345 or 12345-67890), values 5-4294967295. Ranges must not overlap with H2/H3/H4. From server config.</help>
+        <help>Header ID for init packets — number or range (e.g. 12345 or 12345-67890), values 1-4294967295. Ranges must not overlap with H2/H3/H4. From server config.</help>
         <grid_view>
             <ignore>true</ignore>
         </grid_view>
@@ -170,7 +170,7 @@
         <id>instance.h2</id>
         <label>H2</label>
         <type>text</type>
-        <help>Header ID for response packets — number or range (e.g. 12345 or 12345-67890), values 5-4294967295. Ranges must not overlap with H1/H3/H4. From server config.</help>
+        <help>Header ID for response packets — number or range (e.g. 12345 or 12345-67890), values 1-4294967295. Ranges must not overlap with H1/H3/H4. From server config.</help>
         <grid_view>
             <ignore>true</ignore>
         </grid_view>
@@ -179,7 +179,7 @@
         <id>instance.h3</id>
         <label>H3</label>
         <type>text</type>
-        <help>Header ID for cookie packets — number or range (e.g. 12345 or 12345-67890), values 5-4294967295. Ranges must not overlap with H1/H2/H4. From server config.</help>
+        <help>Header ID for cookie packets — number or range (e.g. 12345 or 12345-67890), values 1-4294967295. Ranges must not overlap with H1/H2/H4. From server config.</help>
         <grid_view>
             <ignore>true</ignore>
         </grid_view>
@@ -188,11 +188,21 @@
         <id>instance.h4</id>
         <label>H4</label>
         <type>text</type>
-        <help>Header ID for data packets — number or range (e.g. 12345 or 12345-67890), values 5-4294967295. Ranges must not overlap with H1/H2/H3. From server config.</help>
+        <help>Header ID for data packets — number or range (e.g. 12345 or 12345-67890), values 1-4294967295. Ranges must not overlap with H1/H2/H3. From server config.</help>
         <grid_view>
             <ignore>true</ignore>
         </grid_view>
     </field>
+    <field><type>header</type><label>AmneziaWG 3.1 Parameters</label></field>
+    <field><id>instance.header_protection_key</id><label>Header Protection Key</label><type>text</type><help>Optional 32-byte Base64 key used to protect AWG packet headers. Must match the peer.</help><grid_view><ignore>true</ignore></grid_view></field>
+    <field><id>instance.content_padding_addition</id><label>Content Padding Addition</label><type>text</type><help>Optional AWG 3.1 unsigned value or inclusive range, e.g. 64 or 32-96. Leave blank for the protocol default.</help><grid_view><ignore>true</ignore></grid_view></field>
+    <field><id>instance.rekey_after_time</id><label>Rekey After Time</label><type>text</type><help>Optional AWG 3.1 timer value or inclusive range, e.g. 120 or 120-180. Leave blank for the protocol default.</help><grid_view><ignore>true</ignore></grid_view></field>
+    <field><id>instance.rekey_timeout</id><label>Rekey Timeout</label><type>text</type><help>Optional AWG 3.1 timer value or inclusive range, e.g. 5 or 5-8. Leave blank for the protocol default.</help><grid_view><ignore>true</ignore></grid_view></field>
+    <field><id>instance.reject_after_time</id><label>Reject After Time</label><type>text</type><help>Optional AWG 3.1 timer value or inclusive range. Leave blank for the protocol default.</help><grid_view><ignore>true</ignore></grid_view></field>
+    <field><id>instance.keepalive_timeout</id><label>Keepalive Timeout</label><type>text</type><help>Optional AWG 3.1 timer value or inclusive range. Leave blank for the protocol default.</help><grid_view><ignore>true</ignore></grid_view></field>
+    <field><id>instance.max_handshake_attempts</id><label>Max Handshake Attempts</label><type>text</type><help>Optional AWG 3.1 handshake-attempt count or inclusive range. Leave blank for the protocol default.</help><grid_view><ignore>true</ignore></grid_view></field>
+    <field><id>instance.random_trailers</id><label>Random Trailers</label><type>checkbox</type><help>On/off option. Checked = on, unchecked = off; no manual value entry. Add randomized trailing bytes to AWG packets. Enable only when the peer uses the same AWG 3.1 behavior.</help><grid_view><ignore>true</ignore></grid_view></field>
+    <field><id>instance.disable_cookies</id><label>Disable Cookies</label><type>checkbox</type><help>On/off option. Checked = on, unchecked = off; no manual value entry. Disable WireGuard cookie replies. This changes DoS behavior; use only when explicitly required.</help><grid_view><ignore>true</ignore></grid_view></field>
     <field>
         <type>header</type>
         <label>CPS (Custom Protocol Signature)</label>
@@ -277,7 +287,7 @@
         <id>instance.peer_persistent_keepalive</id>
         <label>Keepalive</label>
         <type>text</type>
-        <help>Send keepalive every N seconds (e.g. 25). Required when behind NAT.</help>
+        <help>PersistentKeepalive accepts a single value or AWG 3.1 range from 0 to 65535, e.g. 25 or 20-30. Usually needed when the client is behind NAT.</help>
         <grid_view>
             <ignore>true</ignore>
         </grid_view>

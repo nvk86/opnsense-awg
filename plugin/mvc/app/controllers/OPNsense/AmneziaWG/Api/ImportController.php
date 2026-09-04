@@ -39,6 +39,10 @@ class ImportController extends ApiControllerBase
             'jc' => '', 'jmin' => '', 'jmax' => '',
             's1' => '', 's2' => '', 's3' => '', 's4' => '',
             'h1' => '', 'h2' => '', 'h3' => '', 'h4' => '',
+            'header_protection_key' => '', 'content_padding_addition' => '',
+            'rekey_after_time' => '', 'rekey_timeout' => '', 'reject_after_time' => '',
+            'keepalive_timeout' => '', 'max_handshake_attempts' => '',
+            'random_trailers' => '', 'disable_cookies' => '',
             'i1' => '', 'i2' => '', 'i3' => '', 'i4' => '', 'i5' => '',
             'peer_public_key' => '', 'peer_preshared_key' => '',
             'peer_endpoint' => '', 'peer_allowed_ips' => '',
@@ -72,15 +76,27 @@ class ImportController extends ApiControllerBase
                     'jc' => 'jc', 'jmin' => 'jmin', 'jmax' => 'jmax',
                     's1' => 's1', 's2' => 's2', 's3' => 's3', 's4' => 's4',
                     'h1' => 'h1', 'h2' => 'h2', 'h3' => 'h3', 'h4' => 'h4',
+                    'headerprotectionkey' => 'header_protection_key',
+                    'contentpaddingaddition' => 'content_padding_addition',
+                    'rekeyaftertime' => 'rekey_after_time', 'rekeytimeout' => 'rekey_timeout',
+                    'rejectaftertime' => 'reject_after_time', 'keepalivetimeout' => 'keepalive_timeout',
+                    'maxhandshakeattempts' => 'max_handshake_attempts',
+                    'randomtrailers' => 'random_trailers', 'disablecookies' => 'disable_cookies',
                     'i1' => 'i1', 'i2' => 'i2', 'i3' => 'i3', 'i4' => 'i4', 'i5' => 'i5',
                 ];
                 if (isset($map[$k])) {
                     // I1-I5 CPS tags contain angle brackets (e.g. <b 0xd1><r 50>)
                     // which get double-encoded by Phalcon's 'string' POST filter —
                     // decode twice to restore raw tag syntax.
-                    $data[$map[$k]] = in_array($map[$k], ['i1','i2','i3','i4','i5'], true)
-                        ? html_entity_decode(html_entity_decode($value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8')
-                        : htmlspecialchars($value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+                    $target = $map[$k];
+                    if (in_array($target, ['random_trailers', 'disable_cookies'], true)) {
+                        $lv = strtolower($value);
+                        $data[$target] = in_array($lv, ['on', '1'], true) ? '1' : (in_array($lv, ['off', '0'], true) ? '0' : '');
+                    } else {
+                        $data[$target] = in_array($target, ['i1','i2','i3','i4','i5'], true)
+                            ? html_entity_decode(html_entity_decode($value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8')
+                            : htmlspecialchars($value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+                    }
                 }
             } elseif ($section === 'peer') {
                 $map = [

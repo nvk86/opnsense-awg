@@ -45,7 +45,7 @@ class ServerController extends ApiMutableModelControllerBase
         if(!$this->request->isPost())return ['result'=>'failed'];
         $body=$this->request->getPost('server',null,[]);
         $prep=$this->prepareSubmittedKey($body,null); if(isset($prep['validations']))return ['result'=>'failed','validations'=>$prep['validations']];
-        $v=array_merge($this->validateHFields($body),$this->validateInterfaceNumber($body,null),$this->validateListenPort($body,null),$this->validateClientsEndpoint($body),$this->validateName($body,null));
+        $v=array_merge($this->validateHFields($body),$this->validateAwg31Ranges($body),$this->validateKeepaliveRange($body['clients_keepalive']??''),$this->validateInterfaceNumber($body,null),$this->validateListenPort($body,null),$this->validateClientsEndpoint($body),$this->validateName($body,null));
         if($v)return ['result'=>'failed','validations'=>$v];
         $_POST['server']['private_key']=self::PRIVKEY_SENTINEL;
         $r=$this->addBase('server','server');
@@ -64,7 +64,7 @@ class ServerController extends ApiMutableModelControllerBase
         if(!$this->request->isPost())return ['result'=>'failed'];
         $body=$this->request->getPost('server',null,[]);
         $prep=$this->prepareSubmittedKey($body,(string)$uuid); if(isset($prep['validations']))return ['result'=>'failed','validations'=>$prep['validations']];
-        $v=array_merge($this->validateHFields($body),$this->validateInterfaceNumber($body,(string)$uuid),$this->validateListenPort($body,(string)$uuid),$this->validateClientsEndpoint($body),$this->validateName($body,(string)$uuid));
+        $v=array_merge($this->validateHFields($body),$this->validateAwg31Ranges($body),$this->validateKeepaliveRange($body['clients_keepalive']??''),$this->validateInterfaceNumber($body,(string)$uuid),$this->validateListenPort($body,(string)$uuid),$this->validateClientsEndpoint($body),$this->validateName($body,(string)$uuid));
         if($v)return ['result'=>'failed','validations'=>$v];
         // Save/validate the model before replacing the private key. A failed
         // edit must never rotate the live key behind the user's back.
@@ -128,8 +128,13 @@ class ServerController extends ApiMutableModelControllerBase
         if(!preg_match('/^[A-Za-z0-9+\/]{43}=$/',$s))return ['validations'=>['server.private_key'=>'Private key must be a valid WireGuard Base64 key']]; return ['key'=>$s];
     }
     private function validateHFields(array $b):array{
-        $ranges=[];$e=[]; foreach(['h1','h2','h3','h4'] as $f){$v=trim($b[$f]??'');if($v==='')continue;if(!preg_match('/^\d{1,10}(-\d{1,10})?$/',$v)){$e['server.'.$f]=strtoupper($f).' has invalid format';continue;} $p=explode('-',$v,2);$lo=(float)$p[0];$hi=isset($p[1])?(float)$p[1]:$lo;if($lo<5||$hi<5||$lo>4294967295||$hi>4294967295||$hi<$lo){$e['server.'.$f]=strtoupper($f).' must be 5-4294967295 and range start <= end';continue;}foreach($ranges as $pf=>[$pl,$ph])if($lo<=$ph&&$pl<=$hi){$e['server.'.$f]=strtoupper($f).' overlaps '.strtoupper($pf);break;}if(!isset($e['server.'.$f]))$ranges[$f]=[$lo,$hi];} return $e;
+        $ranges=[];$e=[]; foreach(['h1','h2','h3','h4'] as $f){$v=trim($b[$f]??'');if($v==='')continue;if(!preg_match('/^\d{1,10}(-\d{1,10})?$/',$v)){$e['server.'.$f]=strtoupper($f).' has invalid format';continue;} $p=explode('-',$v,2);$lo=(float)$p[0];$hi=isset($p[1])?(float)$p[1]:$lo;if($lo<1||$hi<1||$lo>4294967295||$hi>4294967295||$hi<$lo){$e['server.'.$f]=strtoupper($f).' must be 1-4294967295 and range start <= end';continue;}foreach($ranges as $pf=>[$pl,$ph])if($lo<=$ph&&$pl<=$hi){$e['server.'.$f]=strtoupper($f).' overlaps '.strtoupper($pf);break;}if(!isset($e['server.'.$f]))$ranges[$f]=[$lo,$hi];} return $e;
     }
+    private function validateAwg31Ranges(array $b):array{
+        $e=[]; foreach(['content_padding_addition','rekey_after_time','rekey_timeout','reject_after_time','keepalive_timeout','max_handshake_attempts'] as $f){$v=trim((string)($b[$f]??''));if($v==='')continue;$err=$this->validateUnsignedRangeValue($v,4294967295);if($err!=='')$e['server.'.$f]=$err;} return $e;
+    }
+    private function validateKeepaliveRange($v):array{$v=trim((string)$v);if($v==='')return [];$err=$this->validateUnsignedRangeValue($v,65535);return $err===''?[]:['server.clients_keepalive'=>$err];}
+    private function validateUnsignedRangeValue(string $v,int $max):string{if(!preg_match('/^\d{1,10}(-\d{1,10})?$/',$v))return 'Must be a non-negative number or range';$p=explode('-',$v,2);$lo=(float)$p[0];$hi=isset($p[1])?(float)$p[1]:$lo;if($lo>$max||$hi>$max)return 'Value exceeds '.$max;if($hi<$lo)return 'Range start must not exceed range end';return '';}
     private function validateInterfaceNumber(array $b,?string $self):array{
         $n=trim($b['interface_number']??''); if($n==='')return [];
         foreach((new \OPNsense\AmneziaWG\Instance())->instance->iterateItems() as $x)if((string)$x->interface_number===$n)return ['server.interface_number'=>'Interface awg'.$n.' is already used by client tunnel "'.(string)$x->name.'"'];

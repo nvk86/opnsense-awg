@@ -1,5 +1,9 @@
 # opnsense-awg
 
+> **v2.0.0 backend:** the installer migrates existing installations from the FreeBSD AWG2 packages (`amnezia-kmod` / `amnezia-tools`) to the latest compatible project-owned `opnsense-awg-kmod` and `opnsense-awg-tools` AWG 3.x releases. Existing OPNsense configuration, private-key files, client instances, servers and peers are preserved. AmneziaWG 3.1 is supported while compatibility with existing AWG 2.x configurations is retained.
+
+AWG 3.1 options exposed by the plugin include HeaderProtectionKey, ContentPaddingAddition, ranged timers, ranged PersistentKeepalive, RandomTrailers and DisableCookies. `RandomTrailers`/`DisableCookies` are native GUI checkboxes (checked = `on`, unchecked = `off`), so arbitrary boolean text cannot be entered. They are serialized as `on`/`off` because the AWG tools parser does not accept `true`/`false`.
+
 **AmneziaWG Client + Server plugin for OPNsense**
 
 `opnsense-awg` integrates AmneziaWG into OPNsense as a native VPN service with multiple client tunnels, native server instances, server peers, client provisioning, selective routing and a transactional installer.
@@ -23,7 +27,8 @@ The original copyright notice and BSD 2-Clause License are retained in [LICENSE]
 - Multiple independent client tunnels in the shared `awg0`–`awg99` namespace.
 - Import of native AmneziaWG `.conf` files with **Parse & Fill**.
 - Direct keypair generation from the OPNsense GUI.
-- AWG 2.0 parameters: `Jc`, `Jmin`, `Jmax`, `S1`–`S4`, `H1`–`H4` including ranges, and `I1`–`I5` CPS values.
+- Existing AWG 2.x configuration parameters remain supported for backward compatibility.
+- AWG 3.1 parameters: `HeaderProtectionKey`, `ContentPaddingAddition`, ranged timers, ranged `PersistentKeepalive`, `RandomTrailers`, and `DisableCookies`.
 - `Table = off`: the plugin does not install policy routes itself. OPNsense Firewall Rules + Gateway remain the source of routing policy.
 - Per-instance Start / Stop / Restart.
 - Runtime statistics, handshake state and connection diagnostics.
@@ -57,33 +62,25 @@ The original copyright notice and BSD 2-Clause License are retained in [LICENSE]
 
 ## Installer and package handling
 
-`install.sh` handles plugin installation, upgrade and removal. It also performs defensive checks around the FreeBSD packages required by AmneziaWG.
+v2.0.0 uses the project-owned AWG 3.x package pair and no longer upgrades AWG from the FreeBSD quarterly repository. At install/update time it resolves the latest GitHub release independently for both repositories, requires both to remain in major version 3 and requires their upstream protocol versions to match. Package revisions such as `_1` are allowed.
 
-The installer:
+Current compatible releases at v2.0.0 release time:
 
-- verifies the current plugin version and asks before install/reinstall/upgrade;
-- verifies `pkg`/repository state before modifying packages;
-- never edits the normal OPNsense repository configuration to expose FreeBSD packages;
-- uses an isolated, command-scoped temporary FreeBSD quarterly `REPOS_DIR` only when needed;
-- preserves pre-existing package lock state;
-- handles `amnezia-tools` and `amnezia-kmod` independently;
-- creates local rollback packages before replacing installed AWG packages;
-- validates package identity/version before installation;
-- for a kmod replacement, records the exact live managed AWG interface set, stops it, replaces the module and restores that exact set;
-- rolls back package/plugin state when a transactional step fails before commit;
-- refuses unsafe kmod replacement if a live AWG interface cannot be mapped to a canonical plugin config.
+| Package | Version |
+|---|---|
+| `opnsense-awg-kmod` | `3.1.20260812_1` |
+| `opnsense-awg-tools` | `3.1.20260812` |
 
-A userspace-only `amnezia-tools` update intentionally leaves live tunnels running when it can safely do so.
+During an upgrade from v1.0.0 the installer resolves `releases/latest`, downloads each `.pkg` together with its matching `.pkg.sha256` asset, verifies the downloaded checksum and package manifest, creates local rollback packages for the currently installed AWG packages, stops plugin-owned tunnels, removes legacy `amnezia-tools` / `amnezia-kmod`, installs the resolved package pair, switches the kernel module from `if_amn` to `if_awg`, runs OPNsense model migrations, validates the resulting configuration, and restores interfaces that were running before the transaction. Existing `config.xml` data and `/usr/local/etc/amnezia` key/config files are backed up before the package transaction.
+
+A failure after package mutation triggers rollback to the packages, plugin files, loader configuration, OPNsense configuration and key directory captured at the start of the transaction.
 
 ## Requirements
 
-| Component | Supported / expected |
-|---|---|
-| OPNsense | 26.7.x |
-| FreeBSD | 15.1 amd64 |
-| `amnezia-kmod` | 2.0.x recommended for full AWG 2.0 support |
-| `amnezia-tools` | 1.0.20250903 or newer recommended |
-
+- OPNsense 26.7.x or compatible FreeBSD 15.1-based OPNsense release.
+- `uname -K` >= `1501000` for the published AWG 3.1 kernel package.
+- Network access to GitHub Releases during installation/upgrade.
+- `fetch`, `sha256`, `pkg`/`pkg-static`, PHP and the standard OPNsense configd environment.
 
 ## Installation
 
@@ -92,7 +89,7 @@ A userspace-only `amnezia-tools` update intentionally leaves live tunnels runnin
 For the current repository snapshot on a workstation:
 
 ```sh
-git clone https://github.com/nvk86/opnsense-awg.git
+git clone https://github.com/nvk86/opnsense-awg-plugin.git
 cd opnsense-awg
 ```
 
@@ -120,7 +117,7 @@ cd /tmp/opnsense-awg
 sh install.sh
 ```
 
-The installer shows the currently installed plugin version and the version being installed, checks the AWG userspace/kernel prerequisites and asks before any relevant package transaction.
+The installer reports the target plugin/AWG versions, verifies the platform and release assets, then performs the package migration as one guarded transaction with rollback on failure.
 
 After installation, refresh the OPNsense GUI and open:
 
@@ -229,43 +226,17 @@ This keeps the VPN service lifecycle separate from OPNsense security policy.
 
 ## Updating
 
-Download/unpack the newer `opnsense-awg` release or repository snapshot, copy it to OPNsense and run its installer exactly as for the initial installation:
+Run the `install.sh` from the new release directory as root. The v2.0.0 installer is also the migration path from v1.0.0/AWG2; do not manually replace the kernel module or userspace binaries first.
 
-```sh
-cd /tmp/opnsense-awg
-sh install.sh
-```
-
-If an older version is installed, the script displays both versions and asks to upgrade.
-
-Plugin configuration and protected private-key files are preserved across a normal upgrade. The installer creates rollback state before replacing plugin files and validates the resulting runtime before committing the new plugin version.
-
-If a newer `amnezia-tools` or `amnezia-kmod` package is available, it is handled as a separate guarded transaction rather than as an uncontrolled general `pkg upgrade`.
-
-After upgrading, verify:
-
-```sh
-configctl amneziawg version
-configctl amneziawg validate
-awg show
-```
+The installer resolves the latest compatible AWG 3.x releases on every install/repair run. It requires kmod and tools to have the same upstream protocol version (package revision suffixes such as `_1` may differ), downloads the matching `.pkg.sha256` assets, verifies both package hashes and manifests before mutation, and refuses an incompatible latest pair rather than silently mixing versions.
 
 ## Removing
 
-Run the installer from any matching source directory:
-
 ```sh
-sh install.sh uninstall
+./install.sh --uninstall
 ```
 
-Removal first stops plugin-owned AWG interfaces safely. It then asks two independent questions:
-
-1. whether `amnezia-kmod` and `amnezia-tools` should also be removed;
-2. whether saved AmneziaWG configuration and private keys should be purged.
-
-By default, package removal and configuration/key purge are **not** forced. This makes reinstalling the plugin without losing its saved configuration possible.
-
-Plugin-owned canonical `awgN.conf` files are removed during uninstall because they are derived lifecycle state.
+Uninstall stops the service and removes only the OPNsense plugin integration. The AWG packages and `/usr/local/etc/amnezia` are intentionally retained so removing the UI cannot accidentally destroy keys or package state. They can be removed separately after the operator has confirmed they are no longer needed.
 
 ## Useful commands
 
@@ -329,8 +300,8 @@ plugin/
 │   ├── amneziawg-service-control.php
 │   ├── amneziawg-watchdog.php
 │   ├── amneziawg-ifstats.php
-│   └── amneziawg-testconnect.php
-└── service/conf/actions.d/actions_amneziawg.conf
+└── service/
+    └── conf/actions.d/actions_amneziawg.conf
 ```
 
 The internal `AmneziaWG` MVC namespace and `amneziawg` configd/service identifiers are intentionally retained for compatibility with the existing OPNsense configuration model and upgrade path. The project/repository/plugin distribution name is `opnsense-awg`.
