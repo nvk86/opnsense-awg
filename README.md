@@ -6,7 +6,7 @@
 
 The plugin supports **AmneziaWG 3.1** while retaining compatibility with existing **AWG 2.x** configurations.
 
-Current AmneziaWG 3.1 support includes:
+AmneziaWG 3.1 support includes:
 
 - Header Protection;
 - Content Padding Addition;
@@ -15,7 +15,7 @@ Current AmneziaWG 3.1 support includes:
 - Random Trailers;
 - Disable Cookies;
 - client and server configuration import/export;
-- native client and server operation through the `if_awg` kernel module.
+- native client and server operation using the `if_awg` kernel module.
 
 The plugin uses the project-maintained [`opnsense-awg-kmod`](https://github.com/nvk86/opnsense-awg-kmod) and [`opnsense-awg-tools`](https://github.com/nvk86/opnsense-awg-tools) packages for the FreeBSD/OPNsense backend.
 
@@ -29,7 +29,7 @@ AmneziaWG is a WireGuard-compatible VPN protocol with additional traffic obfusca
 
 This project is based on the client implementation from [MrTheory/os-amneziawg](https://github.com/MrTheory/os-amneziawg).
 
-The upstream project provided the original OPNsense AmneziaWG client integration, including multi-instance client tunnels, AWG 2.0 parameters, configuration import, watchdog/sentinel handling, diagnostics and selective-routing support. `opnsense-awg` keeps that foundation and extends it with native server mode, server peers, client provisioning, differential lifecycle reconciliation and a hardened installer/update path.
+The upstream project provided the original OPNsense AmneziaWG client integration, including multi-instance client tunnels, AWG 2.0 parameters, configuration import, watchdog/sentinel handling, diagnostics and selective-routing support. `opnsense-awg-plugin` keeps that foundation and extends it with native server mode, server peers, client provisioning, differential lifecycle reconciliation and a hardened installer/update path.
 
 The original copyright notice and BSD 2-Clause License are retained in [LICENSE](LICENSE).
 
@@ -75,7 +75,7 @@ The original copyright notice and BSD 2-Clause License are retained in [LICENSE]
 
 ## Installer and package handling
 
-v2.0.0 uses the project-owned AWG 3.x package pair and no longer upgrades AWG from the FreeBSD quarterly repository. At install/update time it resolves the latest GitHub release independently for both repositories, requires both to remain in major version 3 and requires their upstream protocol versions to match. Package revisions such as `_1` are allowed.
+The v2.0.0 installer uses the project-owned AWG 3.x package pair and no longer upgrades AWG from the FreeBSD quarterly repository. At install/update time it resolves the latest GitHub release independently for both repositories, requires both to remain in major version 3 and requires their upstream protocol versions to match. Package revisions such as `_1` are allowed.
 
 Current compatible releases at v2.0.0 release time:
 
@@ -103,7 +103,7 @@ For the current repository snapshot on a workstation:
 
 ```sh
 git clone https://github.com/nvk86/opnsense-awg-plugin.git
-cd opnsense-awg
+cd opnsense-awg-plugin
 ```
 
 Alternatively, download the repository archive from GitHub and unpack it locally.
@@ -111,7 +111,7 @@ Alternatively, download the repository archive from GitHub and unpack it locally
 ### 2. Copy it to OPNsense
 
 ```sh
-scp -r opnsense-awg root@<opnsense-ip>:/tmp/opnsense-awg
+scp -r opnsense-awg-plugin root@<opnsense-ip>:/tmp/opnsense-awg-plugin
 ```
 
 Then connect to OPNsense:
@@ -119,7 +119,7 @@ Then connect to OPNsense:
 ```sh
 ssh root@<opnsense-ip>
 sh
-cd /tmp/opnsense-awg
+cd /tmp/opnsense-awg-plugin
 ```
 
 `sh` is intentional: the interactive OPNsense/FreeBSD root shell may be `csh`, while the installer is a POSIX shell script.
@@ -317,7 +317,7 @@ plugin/
     └── conf/actions.d/actions_amneziawg.conf
 ```
 
-The internal `AmneziaWG` MVC namespace and `amneziawg` configd/service identifiers are intentionally retained for compatibility with the existing OPNsense configuration model and upgrade path. The project/repository/plugin distribution name is `opnsense-awg`.
+The internal `AmneziaWG` MVC namespace and `amneziawg` configd/service identifiers are intentionally retained for compatibility with the existing OPNsense configuration model and upgrade path. The public repository is `opnsense-awg-plugin`.
 
 ## License
 
