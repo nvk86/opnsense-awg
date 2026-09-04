@@ -1,14 +1,27 @@
-# opnsense-awg
-
-> **v2.0.0 backend:** the installer migrates existing installations from the FreeBSD AWG2 packages (`amnezia-kmod` / `amnezia-tools`) to the latest compatible project-owned `opnsense-awg-kmod` and `opnsense-awg-tools` AWG 3.x releases. Existing OPNsense configuration, private-key files, client instances, servers and peers are preserved. AmneziaWG 3.1 is supported while compatibility with existing AWG 2.x configurations is retained.
-
-AWG 3.1 options exposed by the plugin include HeaderProtectionKey, ContentPaddingAddition, ranged timers, ranged PersistentKeepalive, RandomTrailers and DisableCookies. `RandomTrailers`/`DisableCookies` are native GUI checkboxes (checked = `on`, unchecked = `off`), so arbitrary boolean text cannot be entered. They are serialized as `on`/`off` because the AWG tools parser does not accept `true`/`false`.
+# opnsense-awg-plugin
 
 **AmneziaWG Client + Server plugin for OPNsense**
 
-`opnsense-awg` integrates AmneziaWG into OPNsense as a native VPN service with multiple client tunnels, native server instances, server peers, client provisioning, selective routing and a transactional installer.
+`opnsense-awg-plugin` integrates AmneziaWG into OPNsense as a native VPN service with multiple client tunnels, native server instances, server peers, client provisioning, selective routing and managed service lifecycle.
 
-AmneziaWG is an obfuscated WireGuard-compatible VPN protocol designed to make WireGuard traffic harder to identify by DPI while retaining the familiar WireGuard network model.
+The plugin supports **AmneziaWG 3.1** while retaining compatibility with existing **AWG 2.x** configurations.
+
+Current AmneziaWG 3.1 support includes:
+
+- Header Protection;
+- Content Padding Addition;
+- ranged protocol timers;
+- ranged Persistent Keepalive;
+- Random Trailers;
+- Disable Cookies;
+- client and server configuration import/export;
+- native client and server operation through the `if_awg` kernel module.
+
+The plugin uses the project-maintained [`opnsense-awg-kmod`](https://github.com/nvk86/opnsense-awg-kmod) and [`opnsense-awg-tools`](https://github.com/nvk86/opnsense-awg-tools) packages for the FreeBSD/OPNsense backend.
+
+Existing installations using the older FreeBSD `amnezia-kmod` / `amnezia-tools` stack can be migrated by the installer while preserving OPNsense configuration, keys, client instances, servers and peers.
+
+AmneziaWG is a WireGuard-compatible VPN protocol with additional traffic obfuscation mechanisms intended to make WireGuard traffic harder to identify by DPI while retaining the familiar WireGuard network model.
 
 > This is a third-party community plugin. It is not an official OPNsense or AmneziaVPN component.
 
